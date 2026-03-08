@@ -35,7 +35,7 @@
       "name": "Play Game",
       "short_name": "Play",
       "description": "Start a new game",
-      "url": "./Qless_Scramble.html?start=true",
+      "url": "./",
       "icons": [
         {
           "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%234ecca3' width='96' height='96'/><text x='48' y='48' font-size='50' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>Q</text></svg>",

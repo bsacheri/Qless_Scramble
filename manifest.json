@@ -2,7 +2,7 @@
   "name": "Q-Less Scramble",
   "short_name": "Q-Scramble",
   "description": "A word placement puzzle game where you arrange letter tiles to form valid words",
-  "start_url": "./Qless_Scramble.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

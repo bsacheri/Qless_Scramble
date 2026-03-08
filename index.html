@@ -92,6 +92,9 @@
         .splash-icon { font-size: 6rem; margin-bottom: 20px; }
         .splash-hint { font-size: 0.9rem; color: #999; margin-top: 40px; opacity: 0.7; }
         #toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: rgba(30,30,30,0.95); color: white; padding: 9px 18px; border-radius: 20px; font-size: 0.8rem; z-index: 9998; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; border: 1px solid #444; }
+        .check-row { display:flex; align-items:center; gap:10px; width:95%; margin:12px 0 0 0; }
+        .check-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--accent); flex-shrink:0; cursor:pointer; }
+        .check-row label { font-size:0.8rem; color:var(--text); cursor:pointer; line-height:1.3; }
     </style>
 </head>
 <body>
@@ -101,7 +104,7 @@
                 <div class="splash-icon" style="margin:0 auto 20px auto;"><img src="android-chrome-512x512.png" width="120" height="120" style="border-radius:16px; display:block;"></div>
                 <div class="splash-title">Q-Less Scramble</div>
                 <div class="splash-subtitle">Word Placement Puzzle</div>
-                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 8, 2026 - 2:49 PM</div>
+                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 8, 2026 - 3:05 PM</div>
                 <div class="splash-hint">Tap to start</div>
             </div>
         </div>
@@ -110,7 +113,7 @@
     <div id="play" class="content active">
         <div id="timer">00:00</div>
         <div style="display:flex; justify-content: space-between; width: 95%; margin-bottom: 3px;">
-            <div><button class="mini-btn" onclick="confirmReset()">RESET</button><button class="mini-btn" onclick="centerGrid()" style="margin-left:3px">CENTER</button></div>
+            <div><button class="mini-btn" onclick="confirmReset()">RESET</button><button class="mini-btn" onclick="centerGrid()" style="margin-left:3px">RECENTER</button></div>
             <div><button class="mini-btn" onclick="shuffleBank()">SCRAMBLE</button><button class="mini-btn" onclick="saveCurrentGame()" style="color:var(--accent)">SAVE</button></div>
         </div>
         <div id="dice-bank"></div><div id="grid"></div><button class="btn btn-blue" style="margin-top:8px;" onclick="validateBoard()">CHECK WORDS</button><button class="btn btn-main" style="margin-top:4px;" onclick="finishGame()">FINISH</button>
@@ -120,8 +123,10 @@
         <div class="seed-input-container" style="margin-top:14px; margin-bottom:14px;"><input type="text" id="custom-seed-input" placeholder="Enter a seed word..."><button class="mini-btn" onclick="startCustomSeed()" style="background:#5dade2; border-color:#5dade2; color:white;">GO</button></div>
         <button class="btn btn-main" style="margin-top:6px;" onclick="startDaily()">Daily Challenge</button>
         <button class="btn btn-blue" style="margin-top:6px;" onclick="startRandomSeed()">Random Seed</button>
+        <div class="check-row"><input type="checkbox" id="allow2letters" onchange="saveSettings()"><label for="allow2letters">Allow 2-letter words</label></div>
+        <div class="check-row"><input type="checkbox" id="requireConnected" onchange="saveSettings()"><label for="requireConnected">Require all words connected (if off, only the highest-scoring connected group counts)</label></div>
         <div id="history-container" style="width:95%; margin-top:20px;"></div>
-        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 8, 2026 - 2:49 PM</span></div>
+        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 8, 2026 - 3:05 PM</span></div>
     </div>
     <div id="info" class="content">
         <div style="width:95%; padding:10px 4px; font-size:0.85rem; line-height:1.6;">
@@ -129,29 +134,34 @@
             <p>You are dealt <strong>12 letter tiles</strong> — 3 vowels and 9 consonants — determined by a seed word. Drag tiles from the tile bank onto the grid to form words.</p>
             <ul style="padding-left:18px;">
                 <li>Words can go <strong>horizontally</strong> or <strong>vertically</strong></li>
-                <li>Words must be <strong>2 or more letters</strong></li>
+                <li>Words must be at least <strong>3 letters</strong> by default (2-letter words can be enabled in CONFIG)</li>
                 <li>You do not need to place all tiles</li>
-                <li>Words do not need to connect</li>
+                <li>Words use the official Scrabble dictionary (TWL06)</li>
             </ul>
             <h3 style="color:var(--accent); margin-top:20px;">Scoring</h3>
-            <p>Each letter has a Scrabble point value. Only valid dictionary words count toward your score. Invalid words appear crossed out in the results.</p>
+            <p>Each letter has a Scrabble point value (A=1, Q=10, Z=10, etc.). Only valid dictionary words count. Invalid words appear crossed out. By default, only the highest-scoring connected group of words counts — see Game Settings below.</p>
             <h3 style="color:var(--accent); margin-top:20px;">Play Tab Buttons</h3>
             <ul style="padding-left:18px;">
                 <li><strong>RESET</strong> — Clears the board and restarts the timer</li>
-                <li><strong>CENTER</strong> — Centers your placed tiles on the grid</li>
-                <li><strong>SCRAMBLE</strong> — Shuffles tiles in the bank</li>
-                <li><strong>SAVE</strong> — Saves game state to your history</li>
-                <li><strong>CHECK WORDS</strong> — Validates words and shows your current score</li>
+                <li><strong>RECENTER</strong> — Moves all placed tiles to the center of the grid</li>
+                <li><strong>SCRAMBLE</strong> — Randomly shuffles tiles remaining in the bank</li>
+                <li><strong>SAVE</strong> — Saves the current board and timer to your history</li>
+                <li><strong>CHECK WORDS</strong> — Validates all words on the board and shows your current score without ending the game</li>
                 <li><strong>FINISH</strong> — Ends the game, locks the board, and shows your final score</li>
             </ul>
             <h3 style="color:var(--accent); margin-top:20px;">Sharing Results</h3>
-            <p>After tapping <strong>CHECK WORDS</strong> or <strong>FINISH</strong>, tap the <strong>&#128279; SHARE</strong> button in the results dialog. On mobile this opens your share sheet (messages, email, etc.). On desktop it copies the results to your clipboard.</p>
+            <p>After tapping <strong>CHECK WORDS</strong> or <strong>FINISH</strong>, tap <strong>&#128279; SHARE</strong> in the results dialog. On mobile this opens your share sheet (messages, email, etc.). On desktop it copies to your clipboard. The share text includes your seed, time, each word with (✅/❌), and total score. If words are in separate groups, a ⚠️ note is added.</p>
             <h3 style="color:var(--accent); margin-top:20px;">CONFIG Tab</h3>
             <ul style="padding-left:18px;">
-                <li><strong>Daily Challenge</strong> — Everyone who plays on the same day gets the same 12 tiles</li>
-                <li><strong>Random Seed</strong> — Picks a random preset seed</li>
-                <li><strong>Custom Seed</strong> — Type any word (3+ letters) to get a specific set of tiles. Share your seed word with friends so they can play the same game!</li>
-                <li><strong>Recent Games</strong> — Load a previously saved game to continue playing</li>
+                <li><strong>Daily Challenge</strong> — Everyone who plays on the same calendar day gets the same 12 tiles</li>
+                <li><strong>Random Seed</strong> — Picks a random word from a built-in list of 50 seeds, giving you a new set of tiles each time</li>
+                <li><strong>Custom Seed</strong> — Type any word (3+ letters) for a specific tile set. Share the seed with friends so you can all play the same game and compare scores!</li>
+                <li><strong>Recent Games</strong> — Reload and continue a previously saved game</li>
+            </ul>
+            <h3 style="color:var(--accent); margin-top:20px;">Game Settings</h3>
+            <ul style="padding-left:18px;">
+                <li><strong>Allow 2-letter words</strong> — When checked, 2-letter Scrabble words (AA, BI, QI, etc.) are valid and score normally. Off by default.</li>
+                <li><strong>Require all words connected</strong> — When checked, all your words must physically touch (like a crossword) for all of them to score. When <em>unchecked</em> (default), only the highest-scoring connected group of words counts toward your total — isolated words are shown grayed out with ⚠️.</li>
             </ul>
             <div style="height:20px;"></div>
         </div>
@@ -164,7 +174,7 @@
     <div id="toast"></div>
     <script>
         // ================== IMPORTANT: UPDATE THIS DATE EACH TIME AI MODIFIES THE FILE ==================
-        // Last updated: March 8, 2026 - 2:49 PM
+        // Last updated: March 8, 2026 - 3:05 PM
         // When making changes, update the date/time in THREE places:
         //   1. This comment
         //   2. CONFIG tab footer (search for "Last updated:")
@@ -365,58 +375,114 @@
             for (let i = b.children.length; i >= 0; i--) b.appendChild(b.children[Math.random() * i | 0]); 
         }
         // ==================== WORD VALIDATION ====================
+        // Find connected tile groups via BFS; returns array of Sets of "r-c" keys
+        function findConnectedComponents() {
+            const tiles = new Map();
+            document.querySelectorAll('.cell').forEach(cell => {
+                if (cell.dataset.letter) {
+                    const parts = cell.id.split('-');
+                    const key = `${parts[1]}-${parts[2]}`;
+                    tiles.set(key, { r: parseInt(parts[1]), c: parseInt(parts[2]) });
+                }
+            });
+            const visited = new Set(), components = [];
+            for (const key of tiles.keys()) {
+                if (visited.has(key)) continue;
+                const component = new Set(), queue = [key];
+                while (queue.length) {
+                    const k = queue.shift();
+                    if (visited.has(k)) continue;
+                    visited.add(k); component.add(k);
+                    const { r, c } = tiles.get(k);
+                    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+                        const nk = `${r+dr}-${c+dc}`;
+                        if (tiles.has(nk) && !visited.has(nk)) queue.push(nk);
+                    }
+                }
+                components.push(component);
+            }
+            return components;
+        }
         // Check board for valid words (horizontal and vertical)
         async function validateBoard() {
-            let found = new Set();
-            // Check horizontal words (rows)
-            for (let r = 0; r < ROWS; r++) { 
-                let w = ""; 
-                for (let c = 0; c < COLS; c++) { 
-                    const cell = document.getElementById(`c-${r}-${c}`);
-                    const l = cell ? cell.dataset.letter : null; 
-                    if (l) { 
-                        w += l; 
-                    } else { 
-                        // Only add word if it has 2+ letters and is all uppercase letters
-                        if (w.length > 1 && /^[A-Z]+$/.test(w)) found.add(w); 
-                        w = ""; 
-                    } 
-                } 
-                if (w.length > 1 && /^[A-Z]+$/.test(w)) found.add(w); 
-            }
-            // Check vertical words (columns)
-            for (let c = 0; c < COLS; c++) { 
-                let w = ""; 
-                for (let r = 0; r < ROWS; r++) { 
-                    const cell = document.getElementById(`c-${r}-${c}`);
-                    const l = cell ? cell.dataset.letter : null; 
-                    if (l) { 
-                        w += l; 
-                    } else { 
-                        // Only add word if it has 2+ letters and is all uppercase letters
-                        if (w.length > 1 && /^[A-Z]+$/.test(w)) found.add(w); 
-                        w = ""; 
-                    } 
-                } 
-                if (w.length > 1 && /^[A-Z]+$/.test(w)) found.add(w); 
-            }
-            
-            const sorted = Array.from(found).sort(); 
-            let total = 0, html = "<ol style='padding-left:15px; color:white;'>", wordResults = [];
-            for (let word of sorted) { 
-                if (!word || word.length < 2 || !/^[A-Z]+$/.test(word)) continue;
-                const ok = await checkWord(word); 
-                let s = 0; 
-                if (ok) { 
-                    word.split('').forEach(l => s += pts[l]); 
-                    total += s; 
+            const allow2 = document.getElementById('allow2letters').checked;
+            const requireConnected = document.getElementById('requireConnected').checked;
+            const minLen = allow2 ? 2 : 3;
+            // Find connected components and build cell->component index map
+            const components = findConnectedComponents();
+            const cellToComp = new Map();
+            components.forEach((comp, idx) => comp.forEach(k => cellToComp.set(k, idx)));
+            // Scan board for word sequences, recording which component each belongs to
+            const seenWordComp = new Set(), occurrences = [];
+            for (let r = 0; r < ROWS; r++) {  // Horizontal
+                let w = '', startC = 0;
+                for (let c = 0; c <= COLS; c++) {
+                    const cell = c < COLS ? document.getElementById(`c-${r}-${c}`) : null;
+                    const l = cell ? cell.dataset.letter : null;
+                    if (l) { if (!w) startC = c; w += l; }
+                    else {
+                        if (w.length >= minLen && /^[A-Z]+$/.test(w)) {
+                            const key = `${w}|${cellToComp.get(`${r}-${startC}`)}`;
+                            if (!seenWordComp.has(key)) { seenWordComp.add(key); occurrences.push({ word: w, componentIdx: cellToComp.get(`${r}-${startC}`) }); }
+                        }
+                        w = '';
+                    }
                 }
-                wordResults.push({ word, ok, score: s });
-                html += `<li style="${ok?'':'text-decoration:line-through; color:var(--danger)'}">${word} (${s} pts)</li>`; 
             }
-            lastResults = { words: wordResults, total, seed: currentSeed, time: seconds };
-            document.getElementById('modal-list-container').innerHTML = html + "</ol>"; 
-            document.getElementById('total-score').textContent = "TOTAL: " + total; 
+            for (let c = 0; c < COLS; c++) {  // Vertical
+                let w = '', startR = 0;
+                for (let r = 0; r <= ROWS; r++) {
+                    const cell = r < ROWS ? document.getElementById(`c-${r}-${c}`) : null;
+                    const l = cell ? cell.dataset.letter : null;
+                    if (l) { if (!w) startR = r; w += l; }
+                    else {
+                        if (w.length >= minLen && /^[A-Z]+$/.test(w)) {
+                            const key = `${w}|${cellToComp.get(`${startR}-${c}`)}`;
+                            if (!seenWordComp.has(key)) { seenWordComp.add(key); occurrences.push({ word: w, componentIdx: cellToComp.get(`${startR}-${c}`) }); }
+                        }
+                        w = '';
+                    }
+                }
+            }
+            // Validate each word occurrence against dictionary
+            occurrences.sort((a, b) => a.word.localeCompare(b.word));
+            const wordResults = [];
+            for (const { word, componentIdx } of occurrences) {
+                const ok = await checkWord(word);
+                let score = 0;
+                if (ok) word.split('').forEach(l => score += pts[l]);
+                wordResults.push({ word, ok, score, componentIdx });
+            }
+            // Calculate score per component
+            const compScores = new Array(components.length).fill(0);
+            wordResults.forEach(wr => { if (wr.ok) compScores[wr.componentIdx] += wr.score; });
+            // Determine which components count toward the total
+            let scoringComps, hasUnconnected = false, total = 0;
+            if (requireConnected || components.length <= 1) {
+                scoringComps = new Set(components.map((_, i) => i));
+                total = compScores.reduce((a, b) => a + b, 0);
+            } else {
+                const bestIdx = compScores.length ? compScores.indexOf(Math.max(...compScores)) : 0;
+                scoringComps = new Set([bestIdx]);
+                hasUnconnected = components.length > 1;
+                total = compScores[bestIdx] || 0;
+            }
+            // Build HTML output
+            let warningHtml = '';
+            if (hasUnconnected) {
+                warningHtml = `<p style="color:#f1c40f; font-size:0.75rem; text-align:center; margin:4px 0;">&#9888;&#65039; ${components.length} separate groups &mdash; only the highest-scoring group counts.<br><em>Enable &ldquo;Require all words connected&rdquo; in CONFIG or connect your tiles.</em></p>`;
+            }
+            let html = "<ol style='padding-left:15px; color:white;'>";
+            wordResults.forEach(wr => {
+                const counts = scoringComps.has(wr.componentIdx);
+                const effectiveScore = counts ? wr.score : 0;
+                const style = !wr.ok ? 'text-decoration:line-through; color:var(--danger)' : (!counts ? 'color:#888' : '');
+                html += `<li style="${style}">${wr.word} (${effectiveScore} pts)${!counts && wr.ok ? ' &#9888;&#65039;' : ''}</li>`;
+            });
+            html += '</ol>';
+            lastResults = { words: wordResults, total, seed: currentSeed, time: seconds, hasUnconnected, componentCount: components.length, scoringComps: Array.from(scoringComps) };
+            document.getElementById('modal-list-container').innerHTML = warningHtml + html;
+            document.getElementById('total-score').textContent = 'TOTAL: ' + total;
             document.getElementById('modal-overlay').style.display = 'flex';
         }
         // Validate word against online dictionary API with proper timeout via AbortController
@@ -635,9 +701,10 @@
             rollWithSeed("DAILY-" + new Date().toISOString().slice(0, 10)); 
         }
         
-        // Start game with random seed from predefined list
+        // Start game with random seed from built-in list of 50 words
         function startRandomSeed() { 
-            rollWithSeed(["PIVOT", "JAGUAR", "QUARTZ", "WIZARD", "GALAXY", "BREEZE", "CHROME"][Math.floor(Math.random()*7)]); 
+            const seeds = ["PIVOT","JAGUAR","QUARTZ","WIZARD","GALAXY","BREEZE","CHROME","FALCON","MYSTIC","RIVER","JUNGLE","PRISM","STORM","BLAZE","CIPHER","NOBLE","FROST","AMBER","COBALT","EMBER","GLIDER","HARBOR","INDIGO","JASPER","KINDLE","LANTERN","MARBLE","NETTLE","OASIS","PARROT","QUEST","RIDDLE","SUMMIT","TEMPLE","UMBRA","VELVET","WALNUT","XENON","ZENITH","ANCHOR","BALLET","CANOPY","DAGGER","ELIXIR","FATHOM","GOBLIN","HERALD","ISLAND","JEWEL","KNIGHT"];
+            rollWithSeed(seeds[Math.floor(Math.random() * seeds.length)]); 
         }
         
         // Start game with custom seed from user input
@@ -659,13 +726,38 @@
             clearTimeout(t._toastTimeout);
             t._toastTimeout = setTimeout(() => t.style.opacity = '0', duration);
         }
+        // Save game settings to localStorage
+        function saveSettings() {
+            try {
+                localStorage.setItem('qless_scrab_settings', JSON.stringify({
+                    allow2letters: document.getElementById('allow2letters').checked,
+                    requireConnected: document.getElementById('requireConnected').checked
+                }));
+            } catch(e) {}
+        }
+        // Load game settings from localStorage
+        function loadSettings() {
+            try {
+                const s = JSON.parse(localStorage.getItem('qless_scrab_settings') || '{}');
+                document.getElementById('allow2letters').checked = s.allow2letters || false;
+                document.getElementById('requireConnected').checked = s.requireConnected || false;
+            } catch(e) {}
+        }
         // Share or copy the last validation results to clipboard
         function shareResults() {
             if (!lastResults.words.length) { showToast('No results to share'); return; }
             const m = Math.floor(lastResults.time / 60).toString().padStart(2, '0');
             const s = (lastResults.time % 60).toString().padStart(2, '0');
-            const lines = lastResults.words.map(w => `${w.ok ? '\u2705' : '\u274c'} ${w.word} (${w.score} pts)`);
-            const text = `Q-Less Scramble\nSeed: ${lastResults.seed}\nTime: ${m}:${s}\n\n${lines.join('\n')}\n\nTotal: ${lastResults.total} pts`;
+            const scoringComps = new Set(lastResults.scoringComps || []);
+            const lines = lastResults.words.map(wr => {
+                const counts = scoringComps.has(wr.componentIdx);
+                const effectiveScore = counts ? wr.score : 0;
+                return `${wr.ok ? (counts ? '\u2705' : '\u26a0\ufe0f') : '\u274c'} ${wr.word} (${effectiveScore} pts)`;
+            });
+            let text = `Q-Less Scramble\nSeed: ${lastResults.seed}\nTime: ${m}:${s}\n\n${lines.join('\n')}\n\nTotal: ${lastResults.total} pts`;
+            if (lastResults.hasUnconnected) {
+                text += `\n\u26a0\ufe0f ${lastResults.componentCount} separate groups \u2014 only highest-scoring group counted`;
+            }
             if (navigator.share) {
                 navigator.share({ title: 'Q-Less Scramble', text }).catch(() => {});
             } else if (navigator.clipboard) {
@@ -688,6 +780,7 @@
         
         // Start with daily seed
         startDaily();
+        loadSettings();
     </script>
     <script>
         // Register Service Worker for offline support and PWA installation

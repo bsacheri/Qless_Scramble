@@ -1,11 +1,12 @@
 // Service Worker for Q-Less Scramble PWA
 // Enables offline functionality and app installation
 
-const CACHE_NAME = 'qless-scramble-v2';
+const CACHE_NAME = 'qless-scramble-v3';
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './words.txt'
 ];
 
 // Install event - cache files

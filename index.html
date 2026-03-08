@@ -101,7 +101,7 @@
                 <div class="splash-icon" style="margin:0 auto 20px auto;"><img src="android-chrome-512x512.png" width="120" height="120" style="border-radius:16px; display:block;"></div>
                 <div class="splash-title">Q-Less Scramble</div>
                 <div class="splash-subtitle">Word Placement Puzzle</div>
-                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 8, 2026 - 2:39 PM</div>
+                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 8, 2026 - 2:49 PM</div>
                 <div class="splash-hint">Tap to start</div>
             </div>
         </div>
@@ -121,7 +121,7 @@
         <button class="btn btn-main" style="margin-top:6px;" onclick="startDaily()">Daily Challenge</button>
         <button class="btn btn-blue" style="margin-top:6px;" onclick="startRandomSeed()">Random Seed</button>
         <div id="history-container" style="width:95%; margin-top:20px;"></div>
-        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 8, 2026 - 2:39 PM</span></div>
+        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 8, 2026 - 2:49 PM</span></div>
     </div>
     <div id="info" class="content">
         <div style="width:95%; padding:10px 4px; font-size:0.85rem; line-height:1.6;">
@@ -164,7 +164,7 @@
     <div id="toast"></div>
     <script>
         // ================== IMPORTANT: UPDATE THIS DATE EACH TIME AI MODIFIES THE FILE ==================
-        // Last updated: March 8, 2026 - 2:39 PM
+        // Last updated: March 8, 2026 - 2:49 PM
         // When making changes, update the date/time in THREE places:
         //   1. This comment
         //   2. CONFIG tab footer (search for "Last updated:")
@@ -420,8 +420,27 @@
             document.getElementById('modal-overlay').style.display = 'flex';
         }
         // Validate word against online dictionary API with proper timeout via AbortController
+        // Local Scrabble dictionary (TWL06) - loaded once per session
+        let wordSet = null;
+        async function loadDictionary() {
+            if (wordSet) return;  // Already loaded
+            try {
+                const resp = await fetch('./words.txt');
+                const text = await resp.text();
+                wordSet = new Set(text.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(w => w));
+                console.log(`Dictionary loaded: ${wordSet.size} words`);
+            } catch(e) {
+                console.warn('Could not load local dictionary, falling back to API:', e);
+                wordSet = null;
+            }
+        }
         async function checkWord(w) { 
-            if (w.length < 2) return false; 
+            if (w.length < 2) return false;
+            await loadDictionary();
+            if (wordSet) {
+                return wordSet.has(w.toLowerCase());
+            }
+            // Fallback: online API if dictionary failed to load
             try { 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);

@@ -173,16 +173,16 @@ window.closeModal = function() {
     _origCloseModal();
 
     // Only trigger on a completed (locked) game
-    if (!window.isGameLocked) return;
+    if (!isGameLocked) return;
 
     // All tiles must be on the board (bank empty)
     const bankTiles = document.getElementById('dice-bank').querySelectorAll('.die');
     if (bankTiles.length > 0) return;
 
     // lastResults must exist with no warnings and no invalid words
-    if (!window.lastResults || !window.lastResults.words || !window.lastResults.words.length) return;
-    if (window.lastResults.hasUnconnected) return;
-    if (window.lastResults.words.some(w => !w.ok)) return;
+    if (!lastResults || !lastResults.words || !lastResults.words.length) return;
+    if (lastResults.hasUnconnected) return;
+    if (lastResults.words.some(w => !w.ok)) return;
 
     // Pick a random animation index, avoiding the one that just played
     let idx;

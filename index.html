@@ -56,7 +56,8 @@
             :root { --cell: 30px; }
         }
         #app-container { width: 100%; height: 100%; display: flex; flex-direction: column; flex: 1; overflow-x: hidden; }
-        .tab-bar { display: flex; background: #0f3460; height: 38px; margin-top: 30px; }
+        .tab-bar { display: flex; background: #0f3460; height: 38px; margin-top: 0; }
+        @media (hover: hover) and (pointer: fine) { .tab-bar { margin-top: 30px; } }
         .tab { flex: 1; line-height: 38px; text-align: center; cursor: pointer; font-weight: bold; font-size: 0.8rem; border-bottom: 2px solid transparent; }
         .tab.active { border-bottom: 2px solid var(--accent); background: var(--panel); }
         .content { flex: 1; display: none; flex-direction: column; align-items: center; padding: 4px; overflow-y: auto; width: 100%; overflow-x: hidden; }
@@ -104,7 +105,7 @@
                 <div class="splash-icon"><img src="android-chrome-512x512.png" width="120" height="120" style="border-radius:16px;"></div>
                 <div class="splash-title">Q-Less Scramble</div>
                 <div class="splash-subtitle">Word Placement Puzzle</div>
-                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 8, 2026 - 3:36 PM</div>
+                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 10, 2026</div>
                 <div class="splash-hint">Tap to start</div>
             </div>
         </div>
@@ -116,7 +117,18 @@
             <div><button class="mini-btn" onclick="confirmReset()">RESET</button><button class="mini-btn" onclick="centerGrid()" style="margin-left:3px">RECENTER</button></div>
             <div><button class="mini-btn" onclick="shuffleBank()">SCRAMBLE</button><button class="mini-btn" onclick="saveCurrentGame()" style="color:var(--accent)">SAVE</button></div>
         </div>
-        <div id="dice-bank"></div><div id="grid"></div><button class="btn btn-blue" style="margin-top:8px;" onclick="validateBoard()">CHECK WORDS</button><button class="btn btn-main" style="margin-top:4px;" onclick="finishGame()">FINISH</button>
+        <div id="dice-bank"></div><div id="grid"></div>
+<div style="display:flex; gap:4px; width:94%; margin-top:8px;">
+  <button class="btn btn-blue" style="flex:1; margin:0;" onclick="validateBoard()">CHECK WORDS</button>
+  <button class="btn btn-main" style="flex:1; margin:0;" onclick="finishGame()">FINISH</button>
+</div>
+<div id="debug-btn-row" style="display:none; width:94%; margin-top:6px;">
+  <div style="display:flex; gap:4px;">
+    <button id="debug-load-btn" class="btn" style="flex:1; margin:0; background:#5d4e6d; color:white; font-size:0.75rem;" onclick="animDebugLoad()">LOAD</button>
+    <button class="btn" style="flex:1; margin:0; background:#5d4e6d; color:white; font-size:0.75rem;" onclick="animDebugNext()">NEXT</button>
+    <button class="btn" style="flex:1; margin:0; background:#5d4e6d; color:white; font-size:0.75rem;" onclick="animDebugReplay()">REPLAY</button>
+  </div>
+</div>
         <div style="text-align:center; font-size:0.75rem; color:#888; margin-top:6px;">Seed: <span id="display-seed" style="color:var(--accent); font-family:monospace;">...</span></div>
     </div>
     <div id="config" class="content">
@@ -127,7 +139,7 @@
         <div class="check-row"><input type="checkbox" id="allow2letters" onchange="saveSettings()"><label for="allow2letters">Allow 2-letter words</label></div>
         <div class="check-row"><input type="checkbox" id="requireConnected" onchange="saveSettings()"><label for="requireConnected">Require all words connected (if off, only the highest-scoring connected group counts)</label></div>
         <div id="history-container" style="width:95%; margin-top:20px;"></div>
-        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 8, 2026 - 3:36 PM</span></div>
+        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 10, 2026</span></div>
     </div>
     <div id="info" class="content">
         <div style="width:95%; padding:10px 4px; font-size:0.85rem; line-height:1.6;">
@@ -140,7 +152,7 @@
                 <li>Words use the official Scrabble dictionary (TWL06)</li>
             </ul>
             <h3 style="color:var(--accent); margin-top:20px;">Scoring</h3>
-            <p>Each letter has a Scrabble point value (A=1, Z=10, etc.). Only valid dictionary words count. Invalid words appear crossed out. By default, only the highest-scoring connected group of words counts — see Game Settings below.</p>
+            <p>Each letter has a Scrabble point value (A=1, P=3, Z=10, etc.). Only valid dictionary words count. Invalid words appear crossed out. By default, only the highest-scoring connected group of words counts — see Game Settings below.</p>
             <h3 style="color:var(--accent); margin-top:20px;">Play Tab Buttons</h3>
             <ul style="padding-left:18px;">
                 <li><strong>RESET</strong> — Clears the board and restarts the timer</li>
@@ -148,7 +160,7 @@
                 <li><strong>SCRAMBLE</strong> — Randomly shuffles tiles remaining in the bank</li>
                 <li><strong>SAVE</strong> — Saves the current board and timer to your history</li>
                 <li><strong>CHECK WORDS</strong> — Validates all words on the board and shows your current score without ending the game</li>
-                <li><strong>FINISH</strong> — Ends the game, locks the board, and shows your final score</li>
+                <li><strong>FINISH</strong> — Ends the game, locks the board, and shows your final score. A Share button is availble.</li>
             </ul>
             <h3 style="color:var(--accent); margin-top:20px;">Sharing Results</h3>
             <p>After tapping <strong>CHECK WORDS</strong> or <strong>FINISH</strong>, tap <strong>&#128279; SHARE</strong> in the results dialog. On mobile this opens your share sheet (messages, email, etc.). On desktop it copies to your clipboard. The share text includes your seed, time, each word with (✅/❌), and total score. If words are in separate groups, a ⚠️ note is added.</p>
@@ -175,7 +187,7 @@
     <div id="toast"></div>
     <script>
         // ================== IMPORTANT: UPDATE THIS DATE EACH TIME AI MODIFIES THE FILE ==================
-        // Last updated: March 8, 2026 - 3:36 PM
+        // Last updated: March 10, 2026
         // When making changes, update the date/time in THREE places:
         //   1. This comment
         //   2. CONFIG tab footer (search for "Last updated:")
@@ -787,19 +799,51 @@
         startDaily();
         loadSettings();
     </script>
+    <script src="animate.js"></script>
     <script>
         // Register Service Worker for offline support and PWA installation
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
             navigator.serviceWorker.register('service-worker.js').then(
                 registration => {
                     console.log('Service Worker registered successfully:', registration);
+
+                    // Listen for a new SW waiting to activate
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            // New SW installed and an old one is already controlling the page
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateBanner();
+                            }
+                        });
+                    });
                 },
                 error => {
                     console.log('Service Worker registration failed:', error);
                 }
             );
+
+            // When the SW actually takes control (after skipWaiting), reload to get fresh files
+            let reloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!reloading) { reloading = true; window.location.reload(); }
+            });
         } else if (window.location.protocol === 'file:') {
             console.log('Service Worker not available: file:// protocol detected. Run with a local server for PWA features.');
+        }
+
+        function showUpdateBanner() {
+            const banner = document.createElement('div');
+            banner.id = 'update-banner';
+            banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#4ecca3;color:#1a1a2e;text-align:center;padding:12px 16px;font-weight:bold;font-size:0.85rem;z-index:99999;cursor:pointer;box-shadow:0 -2px 10px rgba(0,0,0,0.4);';
+            banner.textContent = '\u2B06\uFE0F Update available \u2014 tap to reload';
+            banner.onclick = () => {
+                // Tell the waiting SW to skip waiting, which triggers controllerchange → reload
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                });
+            };
+            document.body.appendChild(banner);
         }
     </script>
 </body>

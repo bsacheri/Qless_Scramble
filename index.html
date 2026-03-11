@@ -105,7 +105,7 @@
                 <div class="splash-icon"><img src="android-chrome-512x512.png" width="120" height="120" style="border-radius:16px;"></div>
                 <div class="splash-title">Q-Less Scramble</div>
                 <div class="splash-subtitle">Word Placement Puzzle</div>
-                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">March 10, 2026</div>
+                <div style="font-size:0.8rem; color:#999; margin:20px 0; font-family:monospace;">v1.001 — March 11, 2026</div>
                 <div class="splash-hint">Tap to start</div>
             </div>
         </div>
@@ -136,10 +136,12 @@
         <div class="seed-input-container" style="margin-top:14px; margin-bottom:14px;"><input type="text" id="custom-seed-input" placeholder="Enter a seed word..."><button class="mini-btn" onclick="startCustomSeed()" style="background:#5dade2; border-color:#5dade2; color:white;">GO</button></div>
         <button class="btn btn-main" style="margin-top:6px;" onclick="startDaily()">Daily Challenge</button>
         <button class="btn btn-blue" style="margin-top:6px;" onclick="startRandomSeed()">Random Seed</button>
+        <div style="font-size:0.75rem; color:#aaa; text-align:center; margin:14px 0 8px 0;">Or enter custom tiles (4-26 letters)</div>
+        <div class="seed-input-container" style="margin-bottom:8px;"><input type="text" id="custom-tiles-input" placeholder="CUSTOM TILES" maxlength="26" style="text-transform: uppercase;"><button class="mini-btn" onclick="createCustomTiles()" style="background:#27ae60; border-color:#27ae60; color:white;">Create Tiles</button></div>
         <div class="check-row"><input type="checkbox" id="allow2letters" onchange="saveSettings()"><label for="allow2letters">Allow 2-letter words</label></div>
         <div class="check-row"><input type="checkbox" id="requireConnected" onchange="saveSettings()"><label for="requireConnected">Require all words connected (if off, only the highest-scoring connected group counts)</label></div>
         <div id="history-container" style="width:95%; margin-top:20px;"></div>
-        <div onclick="checkForUpdates()" style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='#666'">Last updated:<br><span style="color:#999;">March 10, 2026</span><br><span style="font-size:0.6rem; color:#888;">(click to check for updates)</span></div>
+        <div id="version-footer" onclick="checkForUpdates()" style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='#666'">Last updated:<br><span style="color:#999;">v1.001 — <span id="file-mod-date">March 11, 2026</span></span><br><span style="font-size:0.6rem; color:#888;">(click to check for updates)</span></div>
     </div>
     <div id="info" class="content">
         <div style="width:95%; padding:10px 4px; font-size:0.85rem; line-height:1.6;">
@@ -186,13 +188,13 @@
     <div class="drag-hint">💻 Drag tiles with mouse</div>
     <div id="toast"></div>
     <script>
-        // ================== IMPORTANT: UPDATE THIS DATE EACH TIME AI MODIFIES THE FILE ==================
-        // Last updated: March 10, 2026
-        // When making changes, update the date/time in THREE places:
+        // ================== IMPORTANT: UPDATE VERSION EACH TIME CODE IS MODIFIED ==================
+        // Current version: 1.001 (March 11, 2026)
+        // Increment by 0.001 for each change. Update in THREE places:
         //   1. This comment
         //   2. CONFIG tab footer (search for "Last updated:")
-        //   3. Splash screen (search for "Tap to start")
-        // ====================================================================================================
+        //   3. Splash screen version display
+        // =============================================================================================
         
         // ==================== GAME STATE ====================
         let seconds = 0, timerInterval, isPaused = true, currentSeed = "", currentLetters = [], isGameLocked = false;
@@ -200,6 +202,31 @@
         let lastResults = { words: [], total: 0, seed: '', time: 0 };  // Last validation results for sharing
         const MAX_HISTORY = 10;  // Maximum saved games to keep
         const ROWS = 9, COLS = 10;  // Grid dimensions
+        
+        // Fetch and display actual file modification time from HTTP headers
+        async function updateFileModDate() {
+            try {
+                const response = await fetch('./index.html', { method: 'HEAD' });
+                const lastModified = response.headers.get('Last-Modified');
+                if (lastModified) {
+                    const date = new Date(lastModified);
+                    const formatted = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    const modDateEl = document.getElementById('file-mod-date');
+                    if (modDateEl) {
+                        modDateEl.textContent = formatted + ' at ' + time;
+                    }
+                }
+            } catch(e) {
+                console.log('Could not fetch file modification date:', e);
+            }
+        }
+        // Update on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateFileModDate);
+        } else {
+            updateFileModDate();
+        }
         
         // Point values for each letter (Scrabble scoring)
         const pts = {A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
@@ -508,11 +535,17 @@
             if (wordSet) return;  // Already loaded
             try {
                 const resp = await fetch('./words.txt');
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}: Could not load words.txt`);
+                }
                 const text = await resp.text();
+                if (!text || text.trim().length === 0) {
+                    throw new Error('words.txt file is empty');
+                }
                 wordSet = new Set(text.split(/\r?\n/).map(w => w.trim().toLowerCase()).filter(w => w));
                 console.log(`Dictionary loaded: ${wordSet.size} words`);
             } catch(e) {
-                console.warn('Could not load local dictionary, falling back to API:', e);
+                console.error('Failed to load dictionary:', e);
                 wordSet = null;
             }
         }
@@ -734,6 +767,45 @@
             rollWithSeed(v);
             document.getElementById('custom-seed-input').value = ''; 
         }
+        
+        // Create tiles directly from user-entered letters
+        function createCustomTiles() {
+            let v = document.getElementById('custom-tiles-input').value.trim().toUpperCase().replace(/[^A-Z]/g, '');
+            
+            if (v.length < 4 || v.length > 26) {
+                showToast('Enter between 4 and 26 letters');
+                return;
+            }
+            
+            currentSeed = 'CUSTOM: ' + v;
+            seconds = 0;
+            currentLetters = v.split('');
+            
+            // Shuffle the letters
+            for (let i = currentLetters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentLetters[i], currentLetters[j]] = [currentLetters[j], currentLetters[i]];
+            }
+            
+            document.getElementById('display-seed').textContent = currentSeed;
+            document.getElementById('display-seed-config').textContent = currentSeed;
+            document.getElementById('custom-tiles-input').value = '';
+            initNewGame();
+        }
+        
+        // Set up input validation for custom tiles field
+        (function() {
+            const tilesInput = document.getElementById('custom-tiles-input');
+            if (tilesInput) {
+                tilesInput.addEventListener('input', (e) => {
+                    // Remove any non-A-Z characters
+                    let value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+                    // Enforce max length of 26
+                    value = value.substring(0, 26);
+                    e.target.value = value;
+                });
+            }
+        })();
         // ==================== UTILITIES ====================
         // Show a brief non-blocking toast notification
         function showToast(msg, duration = 2500) {

@@ -139,7 +139,7 @@
         <div class="check-row"><input type="checkbox" id="allow2letters" onchange="saveSettings()"><label for="allow2letters">Allow 2-letter words</label></div>
         <div class="check-row"><input type="checkbox" id="requireConnected" onchange="saveSettings()"><label for="requireConnected">Require all words connected (if off, only the highest-scoring connected group counts)</label></div>
         <div id="history-container" style="width:95%; margin-top:20px;"></div>
-        <div style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e;">Last updated:<br><span style="color:#999;">March 10, 2026</span></div>
+        <div onclick="checkForUpdates()" style="width:95%; text-align:center; font-size:0.7rem; color:#666; margin-top:20px; padding-top:10px; border-top:1px solid #34495e; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='#666'">Last updated:<br><span style="color:#999;">March 10, 2026</span><br><span style="font-size:0.6rem; color:#888;">(click to check for updates)</span></div>
     </div>
     <div id="info" class="content">
         <div style="width:95%; padding:10px 4px; font-size:0.85rem; line-height:1.6;">
@@ -844,6 +844,32 @@
                 });
             };
             document.body.appendChild(banner);
+        }
+
+        function checkForUpdates() {
+            showToast('🔍 Checking for updates...');
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    if (reg) {
+                        reg.update().then(() => {
+                            // The updatefound event listener will show the banner if an update is available
+                            setTimeout(() => {
+                                // If no update found, show confirmation message
+                                if (!reg.waiting) {
+                                    showToast('✓ You are running the latest version');
+                                }
+                            }, 1000);
+                        }).catch(err => {
+                            console.error('Update check failed:', err);
+                            showToast('✗ Update check failed');
+                        });
+                    } else {
+                        showToast('Service Worker not registered');
+                    }
+                });
+            } else {
+                showToast('Service Worker not available');
+            }
         }
     </script>
 </body>

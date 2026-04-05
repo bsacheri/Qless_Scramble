@@ -136,6 +136,7 @@
         <div class="seed-input-container" style="margin-top:14px; margin-bottom:14px;"><input type="text" id="custom-seed-input" placeholder="Enter a seed word..."><button class="mini-btn" onclick="startCustomSeed()" style="background:#5dade2; border-color:#5dade2; color:white;">GO</button></div>
         <button class="btn btn-main" style="margin-top:6px;" onclick="startDaily()">Daily Challenge</button>
         <button class="btn btn-blue" style="margin-top:6px;" onclick="startRandomSeed()">Random Seed</button>
+        <button class="btn btn-blue" style="margin-top:6px;" onclick="showHelloWorld()">Show Hello World</button>
         <div style="font-size:0.75rem; color:#aaa; text-align:center; margin:14px 0 8px 0;">Or enter custom tiles (4-26 letters)</div>
         <div class="seed-input-container" style="margin-bottom:8px;"><input type="text" id="custom-tiles-input" placeholder="CUSTOM TILES" maxlength="26" style="text-transform: uppercase;"><button class="mini-btn" onclick="createCustomTiles()" style="background:#27ae60; border-color:#27ae60; color:white;">Create Tiles</button></div>
         <div class="check-row"><input type="checkbox" id="allow2letters" onchange="saveSettings()"><label for="allow2letters">Allow 2-letter words</label></div>
@@ -189,6 +190,9 @@
     <div id="toast"></div>
     <script>
         // ================== IMPORTANT: UPDATE VERSION EACH TIME CODE IS MODIFIED ==================
+        function showHelloWorld() {
+            alert('Hello World');
+        }
         // Current version: 1.001 (March 11, 2026)
         // Increment by 0.001 for each change. Update in THREE places:
         //   1. This comment
